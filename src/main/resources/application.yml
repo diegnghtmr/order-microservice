@@ -1,0 +1,25 @@
+server:
+  port: 8092
+  servlet:
+    context-path: /order-api
+
+spring:
+  application:
+    name: order-microservice
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/orders_db
+      auto-index-creation: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+clients:
+  user:
+    url: http://localhost:8090/user-api
+  foodcourt:
+    url: http://localhost:8091/foodcourt-api
