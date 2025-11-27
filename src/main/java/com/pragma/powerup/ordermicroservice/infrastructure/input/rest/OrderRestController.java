@@ -3,6 +3,7 @@ package com.pragma.powerup.ordermicroservice.infrastructure.input.rest;
 import com.pragma.powerup.ordermicroservice.application.dto.request.AssignChefRequest;
 import com.pragma.powerup.ordermicroservice.application.dto.request.CreateOrderRequest;
 import com.pragma.powerup.ordermicroservice.application.dto.request.UpdateOrderStatusRequest;
+import com.pragma.powerup.ordermicroservice.application.dto.response.OrderPageResponse;
 import com.pragma.powerup.ordermicroservice.application.dto.response.OrderResponse;
 import com.pragma.powerup.ordermicroservice.application.handler.IOrderHandler;
 import io.swagger.v3.oas.annotations.Operation;
@@ -77,8 +78,11 @@ public class OrderRestController {
             @ApiResponse(responseCode = "200", description = "Orders found")
     })
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getByRestaurantAndStatus(@RequestParam Long restaurantId,
-                                                                        @RequestParam String status) {
-        return ResponseEntity.ok(orderHandler.getByRestaurantAndStatus(restaurantId, status));
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<OrderPageResponse> getAllOrdersByStatus(
+            @RequestParam(defaultValue = "PENDIENTE") String status,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(orderHandler.getAllOrdersByStatus(page, size, status));
     }
 }

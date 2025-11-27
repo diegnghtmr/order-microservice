@@ -1,5 +1,6 @@
 package com.pragma.powerup.ordermicroservice.infrastructure.configuration.security;
 
+import com.pragma.powerup.ordermicroservice.infrastructure.configuration.security.details.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -34,19 +35,17 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (token != null && validateToken(token)) {
             String username = getUsernameFromToken(token);
             List<String> roles = getRolesFromToken(token);
-            
-            // Extract ID and put it in details or principal if needed, 
-            // but typically we just need authentication for now.
-            // However, the UseCase needs the ID. We can store it in the Authentication principal or details.
-            // Let's try to extract "id" claim.
             Long userId = getIdFromToken(token);
+            Long restaurantId = getRestaurantIdFromToken(token);
 
             List<GrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role)) // Ensure ROLE_ prefix
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
 
+            CustomUserDetails userDetails = new CustomUserDetails(userId, restaurantId, username);
+
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    userId, // Principal is the User ID now, easier for UseCase
+                    userDetails,
                     null,
                     authorities
             );
@@ -80,15 +79,24 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     
     private Long getIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(getKeys()).build().parseClaimsJws(token).getBody();
-        // Assuming the claim name is "id" or "userId". Let's use "id" as a safe default for custom claims.
-        // If it's stored as Integer, we cast.
         Object id = claims.get("id");
         if (id instanceof Integer) {
             return ((Integer) id).longValue();
         } else if (id instanceof Long) {
             return (Long) id;
         }
-        return null; // Or handle appropriately
+        return null;
+    }
+
+    private Long getRestaurantIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(getKeys()).build().parseClaimsJws(token).getBody();
+        Object restaurantId = claims.get("restaurantId");
+        if (restaurantId instanceof Integer) {
+            return ((Integer) restaurantId).longValue();
+        } else if (restaurantId instanceof Long) {
+            return (Long) restaurantId;
+        }
+        return null;
     }
 
     private List<String> getRolesFromToken(String token) {

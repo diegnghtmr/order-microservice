@@ -5,6 +5,8 @@ import com.pragma.powerup.ordermicroservice.application.dto.request.CreateOrderR
 import com.pragma.powerup.ordermicroservice.application.dto.request.UpdateOrderStatusRequest;
 import com.pragma.powerup.ordermicroservice.application.dto.response.OrderResponse;
 
+import com.pragma.powerup.ordermicroservice.application.dto.response.OrderPageResponse;
+
 import java.util.List;
 
 public interface IOrderHandler {
@@ -17,4 +19,6 @@ public interface IOrderHandler {
     OrderResponse getById(String orderId);
 
     List<OrderResponse> getByRestaurantAndStatus(Long restaurantId, String status);
+
+    OrderPageResponse getAllOrdersByStatus(Integer page, Integer size, String status);
 }

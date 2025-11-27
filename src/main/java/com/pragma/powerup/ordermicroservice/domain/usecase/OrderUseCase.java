@@ -5,13 +5,13 @@ import com.pragma.powerup.ordermicroservice.domain.exception.ClientHasActiveOrde
 import com.pragma.powerup.ordermicroservice.domain.exception.DishBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotActiveException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundException;
-import com.pragma.powerup.ordermicroservice.domain.exception.InvalidClientException;
-import com.pragma.powerup.ordermicroservice.domain.exception.InvalidDishesException;
+import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
+import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
@@ -19,7 +19,6 @@ import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class OrderUseCase implements IOrderServicePort {
 
@@ -84,6 +83,14 @@ public class OrderUseCase implements IOrderServicePort {
     @Override
     public List<Order> getByRestaurantAndStatus(Long restaurantId, String status) {
         return orderPersistencePort.findByRestaurantIdAndStatus(restaurantId, status);
+    }
+
+    @Override
+    public OrderPage getAllOrdersByStatus(Integer page, Integer size, String status, Long restaurantId) {
+        if (restaurantId == null) {
+            throw new EmployeeNotBelongToRestaurantException();
+        }
+        return orderPersistencePort.findByRestaurantIdAndStatus(restaurantId, status, page, size);
     }
 
     private Order findOrThrow(String orderId) {
