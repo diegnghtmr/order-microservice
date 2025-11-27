@@ -89,4 +89,10 @@ public class OrderHandler implements IOrderHandler {
     public void deliverOrder(String orderId, String pin) {
         orderServicePort.deliverOrder(orderId, pin);
     }
+
+    @Override
+    public void cancelOrder(String orderId) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        orderServicePort.cancelOrder(orderId, userDetails.getId());
+    }
 }

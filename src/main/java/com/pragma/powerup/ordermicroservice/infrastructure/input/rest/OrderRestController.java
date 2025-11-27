@@ -119,4 +119,17 @@ public class OrderRestController {
         orderHandler.deliverOrder(orderId, pin);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Cancel order", responses = {
+            @ApiResponse(responseCode = "204", description = "Order cancelled"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "409", description = "Order cannot be cancelled"),
+            @ApiResponse(responseCode = "403", description = "Order does not belong to user")
+    })
+    @PatchMapping("/cancel/{orderId}")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<Void> cancelOrder(@PathVariable String orderId) {
+        orderHandler.cancelOrder(orderId);
+        return ResponseEntity.noContent().build();
+    }
 }
