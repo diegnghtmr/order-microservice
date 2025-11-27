@@ -74,20 +74,21 @@ public class OrderHandler implements IOrderHandler {
     @Override
     public OrderResponse assignOrder(String orderId) {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Order updated = orderServicePort.assignOrder(orderId, userDetails.getId(), userDetails.getRestaurantId());
+        Order updated = orderServicePort.assignOrder(orderId, userDetails.getId(), userDetails.getRestaurantId(), userDetails.getUsername());
         return orderResponseMapper.toResponse(updated);
     }
 
     @Override
     public OrderResponse markOrderReady(String orderId) {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Order updated = orderServicePort.markOrderReady(orderId, userDetails.getId(), userDetails.getRestaurantId());
+        Order updated = orderServicePort.markOrderReady(orderId, userDetails.getId(), userDetails.getRestaurantId(), userDetails.getUsername());
         return orderResponseMapper.toResponse(updated);
     }
 
     @Override
     public void deliverOrder(String orderId, String pin) {
-        orderServicePort.deliverOrder(orderId, pin);
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        orderServicePort.deliverOrder(orderId, pin, userDetails.getUsername());
     }
 
     @Override

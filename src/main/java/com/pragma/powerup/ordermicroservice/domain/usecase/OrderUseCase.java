@@ -26,6 +26,7 @@ import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
+import com.pragma.powerup.ordermicroservice.domain.spi.ITraceabilityPort;
 
 import java.util.Date;
 import java.util.List;
@@ -39,15 +40,18 @@ public class OrderUseCase implements IOrderServicePort {
     private final IExternalFoodCourtPort foodCourtPort;
     private final IExternalUserPort userPort;
     private final IMessagingPort messagingPort;
+    private final ITraceabilityPort traceabilityPort;
 
     public OrderUseCase(IOrderPersistencePort orderPersistencePort,
                         IExternalFoodCourtPort foodCourtPort,
                         IExternalUserPort userPort,
-                        IMessagingPort messagingPort) {
+                        IMessagingPort messagingPort,
+                        ITraceabilityPort traceabilityPort) {
         this.orderPersistencePort = orderPersistencePort;
         this.foodCourtPort = foodCourtPort;
         this.userPort = userPort;
         this.messagingPort = messagingPort;
+        this.traceabilityPort = traceabilityPort;
     }
 
     @Override
@@ -76,7 +80,11 @@ public class OrderUseCase implements IOrderServicePort {
 
         order.setDate(new Date());
         order.setStatus(DEFAULT_STATUS);
-        return orderPersistencePort.save(order);
+        Order savedOrder = orderPersistencePort.save(order);
+
+        traceabilityPort.logTrace(savedOrder.getId(), savedOrder.getClientId(), null, "N/A", DEFAULT_STATUS);
+
+        return savedOrder;
     }
 
     @Override
@@ -93,10 +101,13 @@ public class OrderUseCase implements IOrderServicePort {
 
         order.setStatus("CANCELADO");
         orderPersistencePort.update(order);
+
+        traceabilityPort.logTrace(orderId, order.getClientId(), null, "PENDIENTE", "CANCELADO");
     }
     
     @Override
     public Order assignChef(String orderId, Long chefId) {
+        // This method seems deprecated/incomplete compared to assignOrder, keeping as is but no trace added per instructions focusing on assignOrder
         Order order = findOrThrow(orderId);
         order.setChefId(chefId);
         return orderPersistencePort.update(order);
@@ -128,7 +139,7 @@ public class OrderUseCase implements IOrderServicePort {
     }
 
     @Override
-    public Order assignOrder(String orderId, Long employeeId, Long restaurantId) {
+    public Order assignOrder(String orderId, Long employeeId, Long restaurantId, String employeeEmail) {
         Order order = findOrThrow(orderId);
 
         if (!order.getRestaurantId().equals(restaurantId)) {
@@ -145,11 +156,15 @@ public class OrderUseCase implements IOrderServicePort {
 
         order.setChefId(employeeId);
         order.setStatus("EN_PREPARACION");
-        return orderPersistencePort.update(order);
+        Order updatedOrder = orderPersistencePort.update(order);
+
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "PENDIENTE", "EN_PREPARACION");
+
+        return updatedOrder;
     }
 
     @Override
-    public Order markOrderReady(String orderId, Long employeeId, Long restaurantId) {
+    public Order markOrderReady(String orderId, Long employeeId, Long restaurantId, String employeeEmail) {
         Order order = findOrThrow(orderId);
 
         if (!order.getRestaurantId().equals(restaurantId)) {
@@ -167,11 +182,13 @@ public class OrderUseCase implements IOrderServicePort {
 
         notifyClient(order.getClientId(), pin);
 
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "EN_PREPARACION", "LISTO");
+
         return updatedOrder;
     }
 
     @Override
-    public void deliverOrder(String orderId, String pin) {
+    public void deliverOrder(String orderId, String pin, String employeeEmail) {
         Order order = findOrThrow(orderId);
 
         if (!"LISTO".equals(order.getStatus())) {
@@ -184,6 +201,8 @@ public class OrderUseCase implements IOrderServicePort {
 
         order.setStatus("ENTREGADO");
         orderPersistencePort.update(order);
+
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "LISTO", "ENTREGADO");
     }
 
     private void notifyClient(Long clientId, String pin) {
