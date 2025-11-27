@@ -85,4 +85,15 @@ public class OrderRestController {
             @RequestParam(defaultValue = "10") Integer size) {
         return ResponseEntity.ok(orderHandler.getAllOrdersByStatus(page, size, status));
     }
+
+    @Operation(summary = "Assign order to employee", responses = {
+            @ApiResponse(responseCode = "200", description = "Order assigned"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "403", description = "Order belongs to another restaurant")
+    })
+    @PatchMapping("/{orderId}/assign")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<OrderResponse> assignOrder(@PathVariable String orderId) {
+        return ResponseEntity.ok(orderHandler.assignOrder(orderId));
+    }
 }

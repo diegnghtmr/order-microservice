@@ -5,7 +5,10 @@ import com.pragma.powerup.ordermicroservice.domain.exception.DishBelongsToAnothe
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotActiveException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssignedException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
@@ -141,5 +144,48 @@ class OrderUseCaseTest {
     void getAllOrdersByStatusShouldFailWhenRestaurantIdIsNull() {
         assertThrows(EmployeeNotBelongToRestaurantException.class, 
             () -> orderUseCase.getAllOrdersByStatus(0, 10, "PENDIENTE", null));
+    }
+    
+    @Test
+    void assignOrderShouldSucceedWhenConditionsMet() {
+        order.setId("123");
+        order.setStatus("PENDIENTE");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+        when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order updated = orderUseCase.assignOrder("123", 99L, 10L);
+
+        assertEquals("EN_PREPARACION", updated.getStatus());
+        assertEquals(99L, updated.getChefId());
+    }
+
+    @Test
+    void assignOrderShouldFailWhenOrderDifferentRestaurant() {
+        order.setId("123");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderBelongsToAnotherRestaurantException.class, 
+            () -> orderUseCase.assignOrder("123", 99L, 11L));
+    }
+
+    @Test
+    void assignOrderShouldFailWhenOrderNotPending() {
+        order.setId("123");
+        order.setStatus("READY");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderNotPendingException.class, 
+            () -> orderUseCase.assignOrder("123", 99L, 10L));
+    }
+
+    @Test
+    void assignOrderShouldFailWhenAlreadyAssigned() {
+        order.setId("123");
+        order.setStatus("PENDIENTE");
+        order.setChefId(55L);
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderAlreadyAssignedException.class, 
+            () -> orderUseCase.assignOrder("123", 99L, 10L));
     }
 }

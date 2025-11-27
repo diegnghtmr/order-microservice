@@ -70,4 +70,11 @@ public class OrderHandler implements IOrderHandler {
                 .collect(Collectors.toList());
         return new OrderPageResponse(content, orderPage.getTotalPages(), orderPage.getTotalElements());
     }
+
+    @Override
+    public OrderResponse assignOrder(String orderId) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Order updated = orderServicePort.assignOrder(orderId, userDetails.getId(), userDetails.getRestaurantId());
+        return orderResponseMapper.toResponse(updated);
+    }
 }
