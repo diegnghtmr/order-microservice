@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface IOrderRepository extends MongoRepository<OrderEntity, String> {
     List<OrderEntity> findByRestaurantIdAndStatus(Long restaurantId, String status);
+
+    boolean existsByClientIdAndStatusIn(Long clientId, List<String> statuses);
 }

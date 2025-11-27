@@ -1,15 +1,17 @@
 package com.pragma.powerup.ordermicroservice.infrastructure.output.feign.client;
 
+import com.pragma.powerup.ordermicroservice.infrastructure.output.feign.dto.DishResponseDto;
+import com.pragma.powerup.ordermicroservice.infrastructure.output.feign.dto.RestaurantResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(name = "food-court-microservice", url = "${clients.foodcourt.url}")
 public interface FoodCourtFeignClient {
 
-    @PostMapping("/dishes/validate")
-    Boolean validateDishes(@RequestParam("restaurantId") Long restaurantId, @RequestBody List<Long> dishIds);
+    @GetMapping("/restaurant/{id}")
+    RestaurantResponseDto getRestaurant(@PathVariable("id") Long id);
+
+    @GetMapping("/dish/{id}")
+    DishResponseDto getDish(@PathVariable("id") Long id);
 }

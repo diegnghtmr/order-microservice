@@ -1,7 +1,9 @@
 package com.pragma.powerup.ordermicroservice.domain.spi;
 
-import java.util.List;
+import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
+import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
 
 public interface IExternalFoodCourtPort {
-    boolean dishesBelongToRestaurant(Long restaurantId, List<Long> dishIds);
+    RestaurantModel getRestaurant(Long id);
+    DishModel getDish(Long id);
 }
