@@ -11,28 +11,39 @@ import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnoth
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
+import com.pragma.powerup.ordermicroservice.domain.model.UserModel;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 public class OrderUseCase implements IOrderServicePort {
 
     private static final String DEFAULT_STATUS = "PENDIENTE";
     private final IOrderPersistencePort orderPersistencePort;
     private final IExternalFoodCourtPort foodCourtPort;
+    private final IExternalUserPort userPort;
+    private final IMessagingPort messagingPort;
 
     public OrderUseCase(IOrderPersistencePort orderPersistencePort,
-                        IExternalFoodCourtPort foodCourtPort) {
+                        IExternalFoodCourtPort foodCourtPort,
+                        IExternalUserPort userPort,
+                        IMessagingPort messagingPort) {
         this.orderPersistencePort = orderPersistencePort;
         this.foodCourtPort = foodCourtPort;
+        this.userPort = userPort;
+        this.messagingPort = messagingPort;
     }
 
     @Override
@@ -115,6 +126,41 @@ public class OrderUseCase implements IOrderServicePort {
         order.setChefId(employeeId);
         order.setStatus("EN_PREPARACION");
         return orderPersistencePort.update(order);
+    }
+
+    @Override
+    public Order markOrderReady(String orderId, Long employeeId, Long restaurantId) {
+        Order order = findOrThrow(orderId);
+
+        if (!order.getRestaurantId().equals(restaurantId)) {
+            throw new OrderBelongsToAnotherRestaurantException("Order belongs to another restaurant");
+        }
+
+        if (!"EN_PREPARACION".equals(order.getStatus())) {
+            throw new OrderNotPreparedException("Order is not in preparation");
+        }
+
+        String pin = generatePin();
+        order.setStatus("LISTO");
+        order.setPin(pin);
+        Order updatedOrder = orderPersistencePort.update(order);
+
+        notifyClient(order.getClientId(), pin);
+
+        return updatedOrder;
+    }
+
+    private void notifyClient(Long clientId, String pin) {
+        UserModel user = userPort.getUserById(clientId);
+        if (user != null && user.getCellPhone() != null) {
+            messagingPort.sendMessage(user.getCellPhone(), "Tu pedido está listo. Usa el PIN " + pin + " para retirarlo.");
+        }
+    }
+
+    private String generatePin() {
+        Random random = new Random();
+        int pin = 100000 + random.nextInt(900000);
+        return String.valueOf(pin);
     }
 
     private Order findOrThrow(String orderId) {

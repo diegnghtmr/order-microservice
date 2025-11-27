@@ -77,4 +77,11 @@ public class OrderHandler implements IOrderHandler {
         Order updated = orderServicePort.assignOrder(orderId, userDetails.getId(), userDetails.getRestaurantId());
         return orderResponseMapper.toResponse(updated);
     }
+
+    @Override
+    public OrderResponse markOrderReady(String orderId) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Order updated = orderServicePort.markOrderReady(orderId, userDetails.getId(), userDetails.getRestaurantId());
+        return orderResponseMapper.toResponse(updated);
+    }
 }

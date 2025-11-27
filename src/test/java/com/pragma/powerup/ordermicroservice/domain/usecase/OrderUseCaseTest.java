@@ -9,13 +9,17 @@ import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssigne
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
+import com.pragma.powerup.ordermicroservice.domain.model.UserModel;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +48,12 @@ class OrderUseCaseTest {
     @Mock
     private IExternalFoodCourtPort foodCourtPort;
 
+    @Mock
+    private IExternalUserPort userPort;
+
+    @Mock
+    private IMessagingPort messagingPort;
+
     @InjectMocks
     private OrderUseCase orderUseCase;
 
@@ -53,7 +64,7 @@ class OrderUseCaseTest {
     @BeforeEach
     void init() {
         OrderDish dish = new OrderDish(1L, 2);
-        order = new Order(null, 5L, null, null, null, 10L, Collections.singletonList(dish));
+        order = new Order(null, 5L, null, null, null, 10L, Collections.singletonList(dish), null);
         
         restaurantModel = new RestaurantModel(10L, "Resto", "Addr", "123", "logo", 1L, "NIT");
         dishModel = new DishModel(1L, "Dish", 1L, "Desc", 100.0, 10L, "img", true);
@@ -187,5 +198,33 @@ class OrderUseCaseTest {
 
         assertThrows(OrderAlreadyAssignedException.class, 
             () -> orderUseCase.assignOrder("123", 99L, 10L));
+    }
+
+    @Test
+    void markOrderReadyShouldSucceedAndNotify() {
+        order.setId("123");
+        order.setStatus("EN_PREPARACION");
+        order.setClientId(5L);
+        UserModel user = new UserModel(5L, "Pepe", "Perez", "+1234567890");
+        
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+        when(userPort.getUserById(5L)).thenReturn(user);
+        when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order readyOrder = orderUseCase.markOrderReady("123", 99L, 10L);
+
+        assertEquals("LISTO", readyOrder.getStatus());
+        assertNotNull(readyOrder.getPin());
+        verify(messagingPort).sendMessage(eq("+1234567890"), any(String.class));
+    }
+
+    @Test
+    void markOrderReadyShouldFailWhenOrderNotPrepared() {
+        order.setId("123");
+        order.setStatus("PENDIENTE");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderNotPreparedException.class, 
+            () -> orderUseCase.markOrderReady("123", 99L, 10L));
     }
 }

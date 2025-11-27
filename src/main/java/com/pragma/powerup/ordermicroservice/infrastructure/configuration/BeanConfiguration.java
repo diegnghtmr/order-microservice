@@ -3,10 +3,12 @@ package com.pragma.powerup.ordermicroservice.infrastructure.configuration;
 import com.pragma.powerup.ordermicroservice.domain.api.IOrderServicePort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.ordermicroservice.domain.usecase.OrderUseCase;
 import com.pragma.powerup.ordermicroservice.infrastructure.output.feign.adapter.FoodCourtFeignAdapter;
 import com.pragma.powerup.ordermicroservice.infrastructure.output.feign.adapter.UserFeignAdapter;
+import com.pragma.powerup.ordermicroservice.infrastructure.output.messaging.TwilioMockAdapter;
 import com.pragma.powerup.ordermicroservice.infrastructure.output.mongo.adapter.OrderMongoAdapter;
 import com.pragma.powerup.ordermicroservice.infrastructure.output.mongo.mapper.IOrderEntityMapper;
 import com.pragma.powerup.ordermicroservice.infrastructure.output.mongo.repository.IOrderRepository;
@@ -22,6 +24,7 @@ public class BeanConfiguration {
     private final IOrderEntityMapper orderEntityMapper;
     private final UserFeignAdapter userFeignAdapter;
     private final FoodCourtFeignAdapter foodCourtFeignAdapter;
+    private final TwilioMockAdapter messagingAdapter;
 
     @Bean
     public IOrderPersistencePort orderPersistencePort() {
@@ -39,7 +42,12 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public IMessagingPort messagingPort() {
+        return messagingAdapter;
+    }
+
+    @Bean
     public IOrderServicePort orderServicePort() {
-        return new OrderUseCase(orderPersistencePort(), externalFoodCourtPort());
+        return new OrderUseCase(orderPersistencePort(), externalFoodCourtPort(), externalUserPort(), messagingPort());
     }
 }

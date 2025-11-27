@@ -23,4 +23,6 @@ public interface IOrderHandler {
     OrderPageResponse getAllOrdersByStatus(Integer page, Integer size, String status);
 
     OrderResponse assignOrder(String orderId);
+
+    OrderResponse markOrderReady(String orderId);
 }

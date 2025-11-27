@@ -24,4 +24,5 @@ public class OrderEntity {
     private Long chefId;
     private Long restaurantId;
     private List<OrderDishEntity> dishes;
+    private String pin;
 }
