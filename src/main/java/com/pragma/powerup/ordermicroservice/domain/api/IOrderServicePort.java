@@ -18,11 +18,11 @@ public interface IOrderServicePort {
 
     OrderPage getAllOrdersByStatus(Integer page, Integer size, String status, Long restaurantId);
 
-    Order assignOrder(String orderId, Long employeeId, Long restaurantId);
+    Order assignOrder(String orderId, Long employeeId, Long restaurantId, String employeeEmail);
 
-    Order markOrderReady(String orderId, Long employeeId, Long restaurantId);
+    Order markOrderReady(String orderId, Long employeeId, Long restaurantId, String employeeEmail);
 
-    void deliverOrder(String orderId, String pin);
+    void deliverOrder(String orderId, String pin, String employeeEmail);
 
     void cancelOrder(String orderId, Long userId);
 }
