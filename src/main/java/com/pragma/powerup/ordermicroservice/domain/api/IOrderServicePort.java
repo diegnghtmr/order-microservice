@@ -23,4 +23,6 @@ public interface IOrderServicePort {
     Order markOrderReady(String orderId, Long employeeId, Long restaurantId);
 
     void deliverOrder(String orderId, String pin);
+
+    void cancelOrder(String orderId, Long userId);
 }

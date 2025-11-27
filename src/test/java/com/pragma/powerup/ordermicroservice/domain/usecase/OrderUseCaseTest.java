@@ -7,6 +7,8 @@ import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundExcepti
 import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssignedException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotBelongToClientException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotCancellableException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
@@ -260,5 +262,37 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
         assertThrows(OrderNotReadyException.class, () -> orderUseCase.deliverOrder("123", "123456"));
+    }
+
+    @Test
+    void cancelOrderShouldSucceedWhenPending() {
+        order.setId("123");
+        order.setStatus("PENDIENTE");
+        order.setClientId(5L);
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+        when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        orderUseCase.cancelOrder("123", 5L);
+
+        assertEquals("CANCELADO", order.getStatus());
+    }
+
+    @Test
+    void cancelOrderShouldFailWhenNotOwner() {
+        order.setId("123");
+        order.setClientId(5L);
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderNotBelongToClientException.class, () -> orderUseCase.cancelOrder("123", 99L));
+    }
+
+    @Test
+    void cancelOrderShouldFailWhenNotPending() {
+        order.setId("123");
+        order.setStatus("EN_PREPARACION");
+        order.setClientId(5L);
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderNotCancellableException.class, () -> orderUseCase.cancelOrder("123", 5L));
     }
 }

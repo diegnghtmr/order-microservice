@@ -8,6 +8,8 @@ import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundExcepti
 import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssignedException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotBelongToClientException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotCancellableException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
@@ -77,6 +79,22 @@ public class OrderUseCase implements IOrderServicePort {
         return orderPersistencePort.save(order);
     }
 
+    @Override
+    public void cancelOrder(String orderId, Long userId) {
+        Order order = findOrThrow(orderId);
+
+        if (!order.getClientId().equals(userId)) {
+            throw new OrderNotBelongToClientException("Order does not belong to client");
+        }
+
+        if (!"PENDIENTE".equals(order.getStatus())) {
+            throw new OrderNotCancellableException("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
+        }
+
+        order.setStatus("CANCELADO");
+        orderPersistencePort.update(order);
+    }
+    
     @Override
     public Order assignChef(String orderId, Long chefId) {
         Order order = findOrThrow(orderId);
