@@ -84,4 +84,9 @@ public class OrderHandler implements IOrderHandler {
         Order updated = orderServicePort.markOrderReady(orderId, userDetails.getId(), userDetails.getRestaurantId());
         return orderResponseMapper.toResponse(updated);
     }
+
+    @Override
+    public void deliverOrder(String orderId, String pin) {
+        orderServicePort.deliverOrder(orderId, pin);
+    }
 }

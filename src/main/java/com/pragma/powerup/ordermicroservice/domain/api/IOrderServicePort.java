@@ -21,4 +21,6 @@ public interface IOrderServicePort {
     Order assignOrder(String orderId, Long employeeId, Long restaurantId);
 
     Order markOrderReady(String orderId, Long employeeId, Long restaurantId);
+
+    void deliverOrder(String orderId, String pin);
 }

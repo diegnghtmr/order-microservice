@@ -107,4 +107,16 @@ public class OrderRestController {
     public ResponseEntity<OrderResponse> markOrderReady(@PathVariable String orderId) {
         return ResponseEntity.ok(orderHandler.markOrderReady(orderId));
     }
+
+    @Operation(summary = "Deliver order", responses = {
+            @ApiResponse(responseCode = "204", description = "Order delivered"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "409", description = "Order not ready or PIN mismatch")
+    })
+    @PostMapping("/deliver/{orderId}/{pin}")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<Void> deliverOrder(@PathVariable String orderId, @PathVariable String pin) {
+        orderHandler.deliverOrder(orderId, pin);
+        return ResponseEntity.noContent().build();
+    }
 }

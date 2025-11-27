@@ -25,4 +25,6 @@ public interface IOrderHandler {
     OrderResponse assignOrder(String orderId);
 
     OrderResponse markOrderReady(String orderId);
+
+    void deliverOrder(String orderId, String pin);
 }

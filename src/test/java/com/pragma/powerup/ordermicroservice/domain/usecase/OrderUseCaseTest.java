@@ -10,7 +10,9 @@ import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnoth
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotReadyException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.SecurityPinMismatchException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
@@ -226,5 +228,37 @@ class OrderUseCaseTest {
 
         assertThrows(OrderNotPreparedException.class, 
             () -> orderUseCase.markOrderReady("123", 99L, 10L));
+    }
+
+    @Test
+    void deliverOrderShouldSucceedWithCorrectPin() {
+        order.setId("123");
+        order.setStatus("LISTO");
+        order.setPin("123456");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+        when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        orderUseCase.deliverOrder("123", "123456");
+
+        assertEquals("ENTREGADO", order.getStatus());
+    }
+
+    @Test
+    void deliverOrderShouldFailWithIncorrectPin() {
+        order.setId("123");
+        order.setStatus("LISTO");
+        order.setPin("123456");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(SecurityPinMismatchException.class, () -> orderUseCase.deliverOrder("123", "000000"));
+    }
+
+    @Test
+    void deliverOrderShouldFailWhenStatusNotReady() {
+        order.setId("123");
+        order.setStatus("PENDIENTE");
+        when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
+
+        assertThrows(OrderNotReadyException.class, () -> orderUseCase.deliverOrder("123", "123456"));
     }
 }
