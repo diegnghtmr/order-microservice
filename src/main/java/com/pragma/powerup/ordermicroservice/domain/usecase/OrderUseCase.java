@@ -6,7 +6,10 @@ import com.pragma.powerup.ordermicroservice.domain.exception.DishBelongsToAnothe
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotActiveException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssignedException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
@@ -91,6 +94,27 @@ public class OrderUseCase implements IOrderServicePort {
             throw new EmployeeNotBelongToRestaurantException();
         }
         return orderPersistencePort.findByRestaurantIdAndStatus(restaurantId, status, page, size);
+    }
+
+    @Override
+    public Order assignOrder(String orderId, Long employeeId, Long restaurantId) {
+        Order order = findOrThrow(orderId);
+
+        if (!order.getRestaurantId().equals(restaurantId)) {
+            throw new OrderBelongsToAnotherRestaurantException("Order belongs to another restaurant");
+        }
+
+        if (!"PENDIENTE".equals(order.getStatus())) {
+            throw new OrderNotPendingException("Order is not pending and cannot be assigned");
+        }
+        
+        if (order.getChefId() != null) {
+             throw new OrderAlreadyAssignedException("Order is already assigned");
+        }
+
+        order.setChefId(employeeId);
+        order.setStatus("EN_PREPARACION");
+        return orderPersistencePort.update(order);
     }
 
     private Order findOrThrow(String orderId) {

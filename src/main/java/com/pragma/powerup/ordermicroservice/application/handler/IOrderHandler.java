@@ -21,4 +21,6 @@ public interface IOrderHandler {
     List<OrderResponse> getByRestaurantAndStatus(Long restaurantId, String status);
 
     OrderPageResponse getAllOrdersByStatus(Integer page, Integer size, String status);
+
+    OrderResponse assignOrder(String orderId);
 }
