@@ -13,12 +13,13 @@ public class Order {
     private Long chefId;
     private Long restaurantId;
     private List<OrderDish> dishes;
+    private String pin;
 
     public Order() {
         this.dishes = new ArrayList<>();
     }
 
-    public Order(String id, Long clientId, Date date, String status, Long chefId, Long restaurantId, List<OrderDish> dishes) {
+    public Order(String id, Long clientId, Date date, String status, Long chefId, Long restaurantId, List<OrderDish> dishes, String pin) {
         this.id = id;
         this.clientId = clientId;
         this.date = date;
@@ -26,6 +27,7 @@ public class Order {
         this.chefId = chefId;
         this.restaurantId = restaurantId;
         this.dishes = dishes == null ? new ArrayList<>() : dishes;
+        this.pin = pin;
     }
 
     public String getId() {
@@ -89,6 +91,14 @@ public class Order {
 
     public boolean hasDishes() {
         return dishes != null && !dishes.isEmpty();
+    }
+
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
     }
 
     @Override

@@ -19,4 +19,6 @@ public interface IOrderServicePort {
     OrderPage getAllOrdersByStatus(Integer page, Integer size, String status, Long restaurantId);
 
     Order assignOrder(String orderId, Long employeeId, Long restaurantId);
+
+    Order markOrderReady(String orderId, Long employeeId, Long restaurantId);
 }

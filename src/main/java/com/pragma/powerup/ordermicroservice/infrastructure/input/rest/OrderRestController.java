@@ -96,4 +96,15 @@ public class OrderRestController {
     public ResponseEntity<OrderResponse> assignOrder(@PathVariable String orderId) {
         return ResponseEntity.ok(orderHandler.assignOrder(orderId));
     }
+
+    @Operation(summary = "Mark order as ready", responses = {
+            @ApiResponse(responseCode = "200", description = "Order marked as ready"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "403", description = "Order belongs to another restaurant")
+    })
+    @PatchMapping("/{orderId}/ready")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<OrderResponse> markOrderReady(@PathVariable String orderId) {
+        return ResponseEntity.ok(orderHandler.markOrderReady(orderId));
+    }
 }
