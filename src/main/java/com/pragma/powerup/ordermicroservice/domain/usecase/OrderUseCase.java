@@ -10,8 +10,10 @@ import com.pragma.powerup.ordermicroservice.domain.exception.OrderAlreadyAssigne
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPendingException;
-import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotPreparedException;
+import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotReadyException;
+import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.SecurityPinMismatchException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
@@ -19,9 +21,9 @@ import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
 import com.pragma.powerup.ordermicroservice.domain.model.UserModel;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
-import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
+import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
 
 import java.util.Date;
 import java.util.List;
@@ -148,6 +150,22 @@ public class OrderUseCase implements IOrderServicePort {
         notifyClient(order.getClientId(), pin);
 
         return updatedOrder;
+    }
+
+    @Override
+    public void deliverOrder(String orderId, String pin) {
+        Order order = findOrThrow(orderId);
+
+        if (!"LISTO".equals(order.getStatus())) {
+            throw new OrderNotReadyException("Order is not ready for delivery");
+        }
+        
+        if (order.getPin() == null || !order.getPin().equals(pin)) {
+            throw new SecurityPinMismatchException();
+        }
+
+        order.setStatus("ENTREGADO");
+        orderPersistencePort.update(order);
     }
 
     private void notifyClient(Long clientId, String pin) {
