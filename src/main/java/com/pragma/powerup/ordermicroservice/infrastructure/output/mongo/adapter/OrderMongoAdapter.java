@@ -45,4 +45,9 @@ public class OrderMongoAdapter implements IOrderPersistencePort {
                 .map(orderEntityMapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean existsActiveOrder(Long clientId) {
+        return orderRepository.existsByClientIdAndStatusIn(clientId, List.of("PENDIENTE", "EN_PREPARACION", "LISTO"));
+    }
 }

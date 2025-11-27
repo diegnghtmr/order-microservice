@@ -23,3 +23,6 @@ clients:
     url: http://localhost:8090/user-api
   foodcourt:
     url: http://localhost:8091/foodcourt-api
+
+jwt:
+  secret: my_super_secret_key_for_jwt_signing_that_must_be_long_enough_base64_encoded

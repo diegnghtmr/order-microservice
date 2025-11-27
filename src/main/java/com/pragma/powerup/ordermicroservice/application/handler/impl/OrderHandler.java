@@ -10,6 +10,7 @@ import com.pragma.powerup.ordermicroservice.application.mapper.IOrderResponseMap
 import com.pragma.powerup.ordermicroservice.domain.api.IOrderServicePort;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +27,8 @@ public class OrderHandler implements IOrderHandler {
     @Override
     public OrderResponse createOrder(CreateOrderRequest request) {
         Order order = orderRequestMapper.toOrder(request);
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        order.setClientId(userId);
         return orderResponseMapper.toResponse(orderServicePort.createOrder(order));
     }
 

@@ -9,22 +9,11 @@ import java.util.List;
 public class CreateOrderRequest {
 
     @NotNull
-    private Long clientId;
-
-    @NotNull
     private Long restaurantId;
 
     @NotEmpty
     @Valid
     private List<OrderDishRequest> dishes;
-
-    public Long getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(Long clientId) {
-        this.clientId = clientId;
-    }
 
     public Long getRestaurantId() {
         return restaurantId;
