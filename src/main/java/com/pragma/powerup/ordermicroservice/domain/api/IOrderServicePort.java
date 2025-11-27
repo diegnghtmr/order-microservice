@@ -1,6 +1,7 @@
 package com.pragma.powerup.ordermicroservice.domain.api;
 
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
+import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface IOrderServicePort {
     Order getById(String orderId);
 
     List<Order> getByRestaurantAndStatus(Long restaurantId, String status);
+
+    OrderPage getAllOrdersByStatus(Integer page, Integer size, String status, Long restaurantId);
 }

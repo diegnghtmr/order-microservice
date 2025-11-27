@@ -4,11 +4,13 @@ import com.pragma.powerup.ordermicroservice.domain.exception.ClientHasActiveOrde
 import com.pragma.powerup.ordermicroservice.domain.exception.DishBelongsToAnotherRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotActiveException;
 import com.pragma.powerup.ordermicroservice.domain.exception.DishNotFoundException;
+import com.pragma.powerup.ordermicroservice.domain.exception.EmployeeNotBelongToRestaurantException;
 import com.pragma.powerup.ordermicroservice.domain.exception.OrderNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.exception.RestaurantNotFoundException;
 import com.pragma.powerup.ordermicroservice.domain.model.DishModel;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
 import com.pragma.powerup.ordermicroservice.domain.model.OrderDish;
+import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 import com.pragma.powerup.ordermicroservice.domain.model.RestaurantModel;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
@@ -122,5 +124,22 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("missing")).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class, () -> orderUseCase.updateStatus("missing", "READY"));
+    }
+
+    @Test
+    void getAllOrdersByStatusShouldReturnPage() {
+        OrderPage page = new OrderPage(Collections.singletonList(order), 1, 1);
+        when(orderPersistencePort.findByRestaurantIdAndStatus(10L, "PENDIENTE", 0, 10)).thenReturn(page);
+
+        OrderPage result = orderUseCase.getAllOrdersByStatus(0, 10, "PENDIENTE", 10L);
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getAllOrdersByStatusShouldFailWhenRestaurantIdIsNull() {
+        assertThrows(EmployeeNotBelongToRestaurantException.class, 
+            () -> orderUseCase.getAllOrdersByStatus(0, 10, "PENDIENTE", null));
     }
 }

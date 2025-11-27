@@ -9,9 +9,13 @@ import com.pragma.powerup.ordermicroservice.application.mapper.IOrderRequestMapp
 import com.pragma.powerup.ordermicroservice.application.mapper.IOrderResponseMapper;
 import com.pragma.powerup.ordermicroservice.domain.api.IOrderServicePort;
 import com.pragma.powerup.ordermicroservice.domain.model.Order;
+import com.pragma.powerup.ordermicroservice.infrastructure.configuration.security.details.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import com.pragma.powerup.ordermicroservice.application.dto.response.OrderPageResponse;
+import com.pragma.powerup.ordermicroservice.domain.model.OrderPage;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,8 +31,8 @@ public class OrderHandler implements IOrderHandler {
     @Override
     public OrderResponse createOrder(CreateOrderRequest request) {
         Order order = orderRequestMapper.toOrder(request);
-        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        order.setClientId(userId);
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        order.setClientId(userDetails.getId());
         return orderResponseMapper.toResponse(orderServicePort.createOrder(order));
     }
 
@@ -55,5 +59,15 @@ public class OrderHandler implements IOrderHandler {
                 .stream()
                 .map(orderResponseMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderPageResponse getAllOrdersByStatus(Integer page, Integer size, String status) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        OrderPage orderPage = orderServicePort.getAllOrdersByStatus(page, size, status, userDetails.getRestaurantId());
+        List<OrderResponse> content = orderPage.getContent().stream()
+                .map(orderResponseMapper::toResponse)
+                .collect(Collectors.toList());
+        return new OrderPageResponse(content, orderPage.getTotalPages(), orderPage.getTotalElements());
     }
 }
