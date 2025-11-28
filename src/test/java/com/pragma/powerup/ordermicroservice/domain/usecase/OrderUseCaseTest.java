@@ -25,6 +25,7 @@ import com.pragma.powerup.ordermicroservice.domain.spi.IExternalFoodCourtPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IExternalUserPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IMessagingPort;
 import com.pragma.powerup.ordermicroservice.domain.spi.IOrderPersistencePort;
+import com.pragma.powerup.ordermicroservice.domain.spi.ITraceabilityPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,6 +58,9 @@ class OrderUseCaseTest {
 
     @Mock
     private IMessagingPort messagingPort;
+
+    @Mock
+    private ITraceabilityPort traceabilityPort;
 
     @InjectMocks
     private OrderUseCase orderUseCase;
@@ -168,7 +172,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
         when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order updated = orderUseCase.assignOrder("123", 99L, 10L);
+        Order updated = orderUseCase.assignOrder("123", 99L, 10L, "chef@test.com");
 
         assertEquals("EN_PREPARACION", updated.getStatus());
         assertEquals(99L, updated.getChefId());
@@ -180,7 +184,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
         assertThrows(OrderBelongsToAnotherRestaurantException.class, 
-            () -> orderUseCase.assignOrder("123", 99L, 11L));
+            () -> orderUseCase.assignOrder("123", 99L, 11L, "chef@test.com"));
     }
 
     @Test
@@ -190,7 +194,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
         assertThrows(OrderNotPendingException.class, 
-            () -> orderUseCase.assignOrder("123", 99L, 10L));
+            () -> orderUseCase.assignOrder("123", 99L, 10L, "chef@test.com"));
     }
 
     @Test
@@ -201,7 +205,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
         assertThrows(OrderAlreadyAssignedException.class, 
-            () -> orderUseCase.assignOrder("123", 99L, 10L));
+            () -> orderUseCase.assignOrder("123", 99L, 10L, "chef@test.com"));
     }
 
     @Test
@@ -215,7 +219,7 @@ class OrderUseCaseTest {
         when(userPort.getUserById(5L)).thenReturn(user);
         when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order readyOrder = orderUseCase.markOrderReady("123", 99L, 10L);
+        Order readyOrder = orderUseCase.markOrderReady("123", 99L, 10L, "chef@test.com");
 
         assertEquals("LISTO", readyOrder.getStatus());
         assertNotNull(readyOrder.getPin());
@@ -229,7 +233,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
         assertThrows(OrderNotPreparedException.class, 
-            () -> orderUseCase.markOrderReady("123", 99L, 10L));
+            () -> orderUseCase.markOrderReady("123", 99L, 10L, "chef@test.com"));
     }
 
     @Test
@@ -240,7 +244,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
         when(orderPersistencePort.update(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        orderUseCase.deliverOrder("123", "123456");
+        orderUseCase.deliverOrder("123", "123456", "employee@test.com");
 
         assertEquals("ENTREGADO", order.getStatus());
     }
@@ -252,7 +256,7 @@ class OrderUseCaseTest {
         order.setPin("123456");
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
-        assertThrows(SecurityPinMismatchException.class, () -> orderUseCase.deliverOrder("123", "000000"));
+        assertThrows(SecurityPinMismatchException.class, () -> orderUseCase.deliverOrder("123", "000000", "employee@test.com"));
     }
 
     @Test
@@ -261,7 +265,7 @@ class OrderUseCaseTest {
         order.setStatus("PENDIENTE");
         when(orderPersistencePort.findById("123")).thenReturn(Optional.of(order));
 
-        assertThrows(OrderNotReadyException.class, () -> orderUseCase.deliverOrder("123", "123456"));
+        assertThrows(OrderNotReadyException.class, () -> orderUseCase.deliverOrder("123", "123456", "employee@test.com"));
     }
 
     @Test
