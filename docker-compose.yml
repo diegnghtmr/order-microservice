@@ -1,0 +1,41 @@
+services:
+  order-mongodb:
+    image: mongo:latest
+    container_name: order-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: orders_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - order_mongodb_data:/data/db
+    networks:
+      - order-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-microservice:
+    build: .
+    container_name: order-microservice
+    ports:
+      - "8092:8092"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://order-mongodb:27017/orders_db
+      CLIENTS_USER_URL: http://host.docker.internal:8090/user-api
+      CLIENTS_FOODCOURT_URL: http://host.docker.internal:8091/foodcourt-api
+      CLIENTS_TRACEABILITY_URL: http://host.docker.internal:8093/traceability-api
+    depends_on:
+      order-mongodb:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: on-failure
+
+networks:
+  order-network:
+    driver: bridge
+
+volumes:
+  order_mongodb_data:
