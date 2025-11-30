@@ -39,7 +39,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             Long restaurantId = getRestaurantIdFromToken(token);
 
             List<GrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(this::buildAuthority)
                     .collect(Collectors.toList());
 
             CustomUserDetails userDetails = new CustomUserDetails(userId, restaurantId, username);
@@ -102,6 +102,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private List<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(getKeys()).build().parseClaimsJws(token).getBody();
         return (List<String>) claims.get("roles");
+    }
+
+    private GrantedAuthority buildAuthority(String rawRole) {
+        if (rawRole == null) {
+            return new SimpleGrantedAuthority("");
+        }
+        // Avoid double prefixing; tokens already include ROLE_*
+        String role = rawRole.toUpperCase().startsWith("ROLE_") ? rawRole : "ROLE_" + rawRole;
+        return new SimpleGrantedAuthority(role);
     }
 
     private java.security.Key getKeys() {

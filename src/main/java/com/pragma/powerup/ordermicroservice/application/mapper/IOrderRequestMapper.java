@@ -16,6 +16,8 @@ public interface IOrderRequestMapper {
     @Mapping(target = "date", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "chefId", ignore = true)
+    @Mapping(target = "clientId", ignore = true)
+    @Mapping(target = "pin", ignore = true)
     Order toOrder(CreateOrderRequest request);
 
     OrderDish toDish(OrderDishRequest request);

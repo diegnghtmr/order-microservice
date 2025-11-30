@@ -15,4 +15,5 @@ public class TraceRequestDto {
     private String employeeEmail;
     private String previousState;
     private String newState;
+    private Long restaurantId;
 }

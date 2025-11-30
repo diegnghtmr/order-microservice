@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "traceability-microservice", url = "http://localhost:8093/traceability-api")
+@FeignClient(name = "traceability-microservice", url = "${clients.traceability.url}")
 public interface TraceabilityFeignClient {
     @PostMapping("/trace")
     void logTrace(@RequestBody TraceRequestDto traceRequestDto);

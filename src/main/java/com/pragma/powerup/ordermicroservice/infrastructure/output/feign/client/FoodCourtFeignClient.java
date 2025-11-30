@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "food-court-microservice", url = "${clients.foodcourt.url}")
 public interface FoodCourtFeignClient {
 
-    @GetMapping("/restaurant/{id}")
+    @GetMapping("/restaurants/{id}")
     RestaurantResponseDto getRestaurant(@PathVariable("id") Long id);
 
-    @GetMapping("/dish/{id}")
+    @GetMapping("/dishes/{id}")
     DishResponseDto getDish(@PathVariable("id") Long id);
 }

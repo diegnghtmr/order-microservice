@@ -82,7 +82,7 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus(DEFAULT_STATUS);
         Order savedOrder = orderPersistencePort.save(order);
 
-        traceabilityPort.logTrace(savedOrder.getId(), savedOrder.getClientId(), null, "N/A", DEFAULT_STATUS);
+        traceabilityPort.logTrace(savedOrder.getId(), savedOrder.getClientId(), null, "N/A", DEFAULT_STATUS, savedOrder.getRestaurantId());
 
         return savedOrder;
     }
@@ -102,7 +102,7 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus("CANCELADO");
         orderPersistencePort.update(order);
 
-        traceabilityPort.logTrace(orderId, order.getClientId(), null, "PENDIENTE", "CANCELADO");
+        traceabilityPort.logTrace(orderId, order.getClientId(), null, "PENDIENTE", "CANCELADO", order.getRestaurantId());
     }
     
     @Override
@@ -158,7 +158,7 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus("EN_PREPARACION");
         Order updatedOrder = orderPersistencePort.update(order);
 
-        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "PENDIENTE", "EN_PREPARACION");
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "PENDIENTE", "EN_PREPARACION", order.getRestaurantId());
 
         return updatedOrder;
     }
@@ -182,7 +182,7 @@ public class OrderUseCase implements IOrderServicePort {
 
         notifyClient(order.getClientId(), pin);
 
-        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "EN_PREPARACION", "LISTO");
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "EN_PREPARACION", "LISTO", order.getRestaurantId());
 
         return updatedOrder;
     }
@@ -202,7 +202,7 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus("ENTREGADO");
         orderPersistencePort.update(order);
 
-        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "LISTO", "ENTREGADO");
+        traceabilityPort.logTrace(orderId, order.getClientId(), employeeEmail, "LISTO", "ENTREGADO", order.getRestaurantId());
     }
 
     private void notifyClient(Long clientId, String pin) {

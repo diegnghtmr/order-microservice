@@ -4,6 +4,7 @@ services:
     container_name: order-mongodb
     environment:
       MONGO_INITDB_DATABASE: orders_db
+    command: ["mongod", "--bind_ip", "0.0.0.0"]
     ports:
       - "27017:27017"
     volumes:
@@ -21,8 +22,17 @@ services:
     container_name: order-microservice
     ports:
       - "8092:8092"
+    entrypoint:
+      - java
+      - "-Dspring.mongodb.uri=mongodb://order-mongodb:27017/orders_db"
+      - "-jar"
+      - "/app/app.jar"
+    volumes:
+      - ./src/main/resources/application.yml:/app/config/application.yml:ro
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://order-mongodb:27017/orders_db
+      SPRING_MONGODB_URI: mongodb://order-mongodb:27017/orders_db
+      SPRING_MONGODB_DATABASE: orders_db
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/app/config/
       CLIENTS_USER_URL: http://host.docker.internal:8090/user-api
       CLIENTS_FOODCOURT_URL: http://host.docker.internal:8091/foodcourt-api
       CLIENTS_TRACEABILITY_URL: http://host.docker.internal:8093/traceability-api

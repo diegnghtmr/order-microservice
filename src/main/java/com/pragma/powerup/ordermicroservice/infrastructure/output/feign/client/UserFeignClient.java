@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "user-microservice", url = "${clients.user.url}")
 public interface UserFeignClient {
 
-    @GetMapping("/users/{id}/exists")
+    @GetMapping("/user/{id}/exists")
     Boolean userExists(@PathVariable("id") Long userId);
 
-    @GetMapping("/users/{id}")
+    @GetMapping("/user/{id}")
     UserResponseDto getUserById(@PathVariable("id") Long id);
 }

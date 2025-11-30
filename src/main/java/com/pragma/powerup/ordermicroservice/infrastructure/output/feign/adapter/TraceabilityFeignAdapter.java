@@ -15,9 +15,9 @@ public class TraceabilityFeignAdapter implements ITraceabilityPort {
     private final TraceabilityFeignClient traceabilityFeignClient;
 
     @Override
-    public void logTrace(String orderId, Long clientId, String employeeEmail, String previousState, String newState) {
+    public void logTrace(String orderId, Long clientId, String employeeEmail, String previousState, String newState, Long restaurantId) {
         try {
-            TraceRequestDto dto = new TraceRequestDto(orderId, clientId, employeeEmail, previousState, newState);
+            TraceRequestDto dto = new TraceRequestDto(orderId, clientId, employeeEmail, previousState, newState, restaurantId);
             traceabilityFeignClient.logTrace(dto);
         } catch (Exception e) {
             log.error("Could not save trace for order {}: {}", orderId, e.getMessage());

@@ -6,10 +6,11 @@ server:
 spring:
   application:
     name: order-microservice
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/orders_db
-      auto-index-creation: true
+  mongodb:
+    # Use a single URI source; defaults to the compose service name.
+    uri: ${SPRING_MONGODB_URI:mongodb://order-mongodb:27017/orders_db}
+    database: ${SPRING_MONGODB_DATABASE:orders_db}
+    auto-index-creation: true
 
 springdoc:
   api-docs:
@@ -23,6 +24,9 @@ clients:
     url: http://localhost:8090/user-api
   foodcourt:
     url: http://localhost:8091/foodcourt-api
+  traceability:
+    url: http://localhost:8093/traceability-api
 
 jwt:
-  secret: my_super_secret_key_for_jwt_signing_that_must_be_long_enough_base64_encoded
+  # Align secret with user/foodcourt to allow token validation across services
+  secret: mySuperSecureSecretKeyForPragmaPowerUpProject2025
