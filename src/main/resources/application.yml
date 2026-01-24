@@ -7,8 +7,8 @@ spring:
   application:
     name: order-microservice
   mongodb:
-    # Use a single URI source; defaults to the compose service name.
-    uri: ${SPRING_MONGODB_URI:mongodb://order-mongodb:27017/orders_db}
+    # Use a single URI source; defaults to localhost for local dev.
+    uri: ${SPRING_MONGODB_URI:mongodb://localhost:27017/orders_db}
     database: ${SPRING_MONGODB_DATABASE:orders_db}
     auto-index-creation: true
 
