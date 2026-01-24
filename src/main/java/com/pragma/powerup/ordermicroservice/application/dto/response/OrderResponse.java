@@ -11,6 +11,7 @@ public class OrderResponse {
     private Long chefId;
     private Long restaurantId;
     private List<OrderDishResponse> dishes;
+    private String pin;
 
     public String getId() {
         return id;
@@ -66,5 +67,13 @@ public class OrderResponse {
 
     public void setDishes(List<OrderDishResponse> dishes) {
         this.dishes = dishes;
+    }
+
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
     }
 }
