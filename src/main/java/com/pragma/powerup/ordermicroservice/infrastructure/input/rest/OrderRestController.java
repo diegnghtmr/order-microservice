@@ -78,7 +78,7 @@ public class OrderRestController {
             @ApiResponse(responseCode = "200", description = "Orders found")
     })
     @GetMapping
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'OWNER')")
     public ResponseEntity<OrderPageResponse> getAllOrdersByStatus(
             @RequestParam(defaultValue = "PENDIENTE") String status,
             @RequestParam(defaultValue = "0") Integer page,
