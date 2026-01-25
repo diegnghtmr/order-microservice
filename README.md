@@ -71,9 +71,13 @@ Dependency rule: infrastructure depends on application and domain; domain has no
 
 ## System Diagrams
 ![Project Architecture](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/project-architecture.png)
+_High-level system context showing actors, UI, services, and databases._
 ![SQL Entities Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/sql-entities-diagram.png)
+_Relational model for users, restaurants, dishes, and orders in PostgreSQL._
 ![NoSQL Entities Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/nosql-entities-diagram.png)
+_Document model for traceability events and order history in MongoDB._
 ![Order Flow Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/order-flow-diagram.png)
+_Order lifecycle from pending to delivered or canceled, including state transitions._
 
 ## Related Repositories
 - [user-microservice](https://github.com/diegnghtmr/user-microservice)
