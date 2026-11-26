@@ -1,91 +1,108 @@
-# Order Microservice
+<!-- markdownlint-disable-next-line MD041 -->
+<div align="center">
 
-![Java](https://img.shields.io/badge/Java-25-blue)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen)
-![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-black)
-![Database](https://img.shields.io/badge/DB-MongoDB-green)
+<h1>Food Court — Order API</h1>
 
-Order lifecycle service for the Food Court platform. It validates orders, manages status transitions, and emits traceability events.
+<p><strong>The order lifecycle for diners and kitchen staff, from checkout to pickup.</strong></p>
 
-## Table of Contents
-- [Overview](#overview)
-- [Responsibilities](#responsibilities)
-- [System Context](#system-context)
-- [Architecture](#architecture)
-- [Ports and Adapters](#ports-and-adapters)
-- [Data Store](#data-store)
-- [API](#api)
-- [Local Development](#local-development)
-- [System Diagrams](#system-diagrams)
-- [Related Repositories](#related-repositories)
+<p>
+<a href="https://github.com/diegnghtmr/order-microservice/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/diegnghtmr/order-microservice/ci.yml?branch=main&style=for-the-badge&labelColor=1F1F28&label=CI" alt="CI"></a>
+<img src="https://img.shields.io/badge/Java-25-E0C15A?style=for-the-badge&labelColor=1F1F28" alt="Java 25">
+<img src="https://img.shields.io/badge/Spring%20Boot-4.0-E0C15A?style=for-the-badge&labelColor=1F1F28" alt="Spring Boot 4.0">
+<img src="https://img.shields.io/badge/Database-MongoDB-E0C15A?style=for-the-badge&labelColor=1F1F28" alt="MongoDB">
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7FB4CA?style=for-the-badge&labelColor=1F1F28" alt="License: MIT"></a>
+</p>
 
-## Overview
-Order Microservice owns the end-to-end order workflow. It validates users and catalog data via external services, persists orders in MongoDB, and sends trace events to the Traceability service.
+<p>
+<a href="https://diegnghtmr.me/en/work/food-court/"><strong>Case study</strong></a> &bull;
+<a href="#quick-start"><strong>Quick start</strong></a> &bull;
+<a href="#architecture"><strong>Architecture</strong></a> &bull;
+<a href="https://github.com/diegnghtmr/food-court-ui"><strong>Web app</strong></a>
+</p>
 
-## Responsibilities
-- Create orders and enforce business rules.
-- Assign employees and update order status.
-- Validate dishes and restaurant ownership before processing.
-- Emit traceability events and notifications.
+</div>
 
-## System Context
-Inbound adapters:
-- REST API (Spring MVC) under `/order-api`.
+<p align="center"><img width="100%" alt="Food Court kitchen board with pending, in-preparation, and ready orders" src="docs/assets/order-queue.png"></p>
 
-Outbound adapters:
-- MongoDB persistence.
-- User service and Food Court service via OpenFeign.
-- Traceability service client.
-- Messaging adapter for notifications.
+*The Food Court kitchen board calls this API to claim orders, mark them ready, and confirm pickup.*
 
-Consumers:
-- Food Court UI and operational staff.
+Checkout and pickup need to agree on which dishes were ordered, who is preparing them, and when they can be handed over. This service checks the order against the catalog, stores its current state, and makes the next actions available to diners and kitchen staff. It sends status changes to a separate service for order history.
+
+## Features
+
+- **Checkout validation.** Check that the restaurant exists, its dishes are available and belong to it, and the customer has no active order.
+- **Kitchen assignment.** Staff can list the restaurant queue, take a pending order, and mark work in preparation as ready.
+- **Pickup PIN.** Confirm handoff only after the employee supplies the correct code; the bundled notification adapter mocks SMS delivery.
+- **Customer tracking and cancellation.** Expose order details and let a customer cancel while the order is still pending.
+- **Transition reporting.** Send status changes to Traceability after updating the order; a failed trace call does not roll the update back.
+
+## Quick start
+
+Use JDK 25 and Docker with Compose; Gradle 9.2.1 comes from the wrapper. Start MongoDB in Compose and run the API on the host so it can use the checked-in localhost URLs for the other services.
+
+```sh
+git clone https://github.com/diegnghtmr/order-microservice.git
+cd order-microservice
+docker compose up -d order-mongodb
+./gradlew bootRun
+```
+
+API: `http://localhost:8092/order-api`. Open [Swagger UI](http://localhost:8092/order-api/swagger-ui.html) for the routes under `/orders`, including assignment, ready, delivery, and cancellation.
+
+| Name | Purpose | Default |
+| --- | --- | --- |
+| `SPRING_MONGODB_URI` | MongoDB connection URI | `mongodb://localhost:27017/orders_db` |
+| `SPRING_MONGODB_DATABASE` | Order database name | `orders_db` |
+| `CLIENTS_USER_URL` | User lookup API | `http://localhost:8090/user-api` |
+| `CLIENTS_FOODCOURT_URL` | Restaurant and dish lookup API | `http://localhost:8091/foodcourt-api` |
+| `CLIENTS_TRACEABILITY_URL` | Transition reporting API | `http://localhost:8093/traceability-api` |
+| `JWT_SECRET` | JWT verification secret | Local development value; use a private value matching Identity outside local development |
+
+Start [Identity, Catalog, and Traceability](#related-repositories) to try the full workflow. The UI case study uses a seeded restaurant. The notification adapter is a mock, not a live SMS integration.
 
 ## Architecture
-Hexagonal Architecture keeps business rules independent from frameworks.
 
-- Domain: models, use cases, and port interfaces.
-- Application: DTOs, mappers, and handlers that orchestrate use cases.
-- Infrastructure: REST controllers, Mongo adapters, Feign clients, messaging, security, and configuration.
+Spring MVC controllers delegate to application handlers and `OrderUseCase`. The framework-free domain defines `IOrderPersistencePort`, `IExternalUserPort`, `IExternalFoodCourtPort`, `ITraceabilityPort`, and `IMessagingPort`. MongoDB stores the current order and Feign adapters handle the cross-service calls. Traceability keeps historical transitions separately; history can be incomplete if a trace write fails.
 
-Dependency rule: infrastructure depends on application and domain; domain has no framework dependencies.
+```mermaid
+flowchart LR
+    Web["food-court-ui"] -->|"Checkout, queue, and pickup"| API["Order REST API"]
+    API --> Rules["Order lifecycle use case"]
+    Rules -->|"Save and read current order"| DB["MongoDB: orders_db"]
+    Rules -->|"Look up customer"| Identity["user-microservice"]
+    Rules -->|"Check restaurant and dishes"| Catalog["food-court-microservice"]
+    Rules -->|"Send status transition"| Trace["traceability-microservice"]
+    Rules -->|"Send pickup notification"| SMS["Mock SMS adapter"]
+```
 
-## Ports and Adapters
-- `IOrderPersistencePort` -> Mongo adapter.
-- `IExternalUserPort` -> User Feign adapter.
-- `IExternalFoodCourtPort` -> Food Court Feign adapter.
-- `ITraceabilityPort` -> Traceability client adapter.
-- `IMessagingPort` -> Messaging adapter.
+See the [full order lifecycle diagram](https://github.com/diegnghtmr/food-court-ui/blob/main/docs/order-flow-diagram.png) and the [other system diagrams](https://github.com/diegnghtmr/food-court-ui/tree/main/docs).
 
-## Data Store
-- MongoDB: `mongodb://localhost:27017/orders_db`
+## Tech stack
 
-## API
-- Base URL: `http://localhost:8092/order-api`
-- Swagger UI: `http://localhost:8092/order-api/swagger-ui.html`
+| Layer | Technology |
+| --- | --- |
+| HTTP and security | Java 25, Spring Boot 4.0, Spring MVC, Spring Security, JJWT |
+| Integrations | Spring Cloud OpenFeign, MapStruct, springdoc OpenAPI |
+| Persistence | Spring Data MongoDB |
+| Build and tests | Gradle 9.2.1, JUnit Platform |
 
-## Local Development
-1. Start database: `docker compose up -d`
-2. Run service: `./gradlew bootRun`
-3. Run tests: `./gradlew test`
+## Testing
 
-## System Diagrams
-![Project Architecture](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/project-architecture.png)
-_High-level system context showing actors, UI, services, and databases._
-![SQL Entities Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/sql-entities-diagram.png)
-_Relational model for users, restaurants, dishes, and orders in PostgreSQL._
-![NoSQL Entities Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/nosql-entities-diagram.png)
-_Document model for traceability events and order history in MongoDB._
-![Order Flow Diagram](https://raw.githubusercontent.com/diegnghtmr/food-court-ui/main/docs/order-flow-diagram.png)
-_Order lifecycle from pending to delivered or canceled, including state transitions._
+```sh
+./gradlew build
+```
 
-## Related Repositories
-- [user-microservice](https://github.com/diegnghtmr/user-microservice)
-- [food-court-microservice](https://github.com/diegnghtmr/food-court-microservice)
-- [order-microservice](https://github.com/diegnghtmr/order-microservice)
-- [traceability-microservice](https://github.com/diegnghtmr/traceability-microservice)
-- [food-court-ui](https://github.com/diegnghtmr/food-court-ui)
+[CI](.github/workflows/ci.yml) builds and tests on Temurin 25. Use `./gradlew test` for the test task, which includes domain rules for order creation and the status lifecycle.
+
+## Related repositories
+
+| Repository | Role |
+| --- | --- |
+| [food-court-ui](https://github.com/diegnghtmr/food-court-ui) | Cart, order status, and kitchen board |
+| [food-court-microservice](https://github.com/diegnghtmr/food-court-microservice) | Restaurants, dishes, and availability used at checkout |
+| [user-microservice](https://github.com/diegnghtmr/user-microservice) | Roles, JWTs, and customer lookup |
+| [traceability-microservice](https://github.com/diegnghtmr/traceability-microservice) | Stores status transitions and serves history and reports |
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE).
