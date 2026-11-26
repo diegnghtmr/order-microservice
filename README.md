@@ -49,20 +49,11 @@ docker compose up -d order-mongodb
 
 API: `http://localhost:8092/order-api`. Open [Swagger UI](http://localhost:8092/order-api/swagger-ui.html) for the routes under `/orders`, including assignment, ready, delivery, and cancellation.
 
-| Name | Purpose | Default |
-| --- | --- | --- |
-| `SPRING_MONGODB_URI` | MongoDB connection URI | `mongodb://localhost:27017/orders_db` |
-| `SPRING_MONGODB_DATABASE` | Order database name | `orders_db` |
-| `CLIENTS_USER_URL` | User lookup API | `http://localhost:8090/user-api` |
-| `CLIENTS_FOODCOURT_URL` | Restaurant and dish lookup API | `http://localhost:8091/foodcourt-api` |
-| `CLIENTS_TRACEABILITY_URL` | Transition reporting API | `http://localhost:8093/traceability-api` |
-| `JWT_SECRET` | JWT verification secret | Local development value; use a private value matching Identity outside local development |
-
-Start [Identity, Catalog, and Traceability](#related-repositories) to try the full workflow. The UI case study uses a seeded restaurant. The notification adapter is a mock, not a live SMS integration.
+Start [Identity, Catalog, and Traceability](#related-repositories) to try the full workflow. The UI case study uses a seeded restaurant. See the [configuration reference](docs/reference.md#data-store-and-environment) if any of the services runs on a different port.
 
 ## Architecture
 
-Spring MVC controllers delegate to application handlers and `OrderUseCase`. The framework-free domain defines `IOrderPersistencePort`, `IExternalUserPort`, `IExternalFoodCourtPort`, `ITraceabilityPort`, and `IMessagingPort`. MongoDB stores the current order and Feign adapters handle the cross-service calls. Traceability keeps historical transitions separately; history can be incomplete if a trace write fails.
+Spring MVC controllers delegate to application handlers and the framework-free order use case. MongoDB stores the current order; Feign adapters call the other Food Court services. Traceability keeps historical transitions separately, so history can be incomplete if a trace write fails.
 
 ```mermaid
 flowchart LR
@@ -75,7 +66,9 @@ flowchart LR
     Rules -->|"Send pickup notification"| SMS["Mock SMS adapter"]
 ```
 
-See the [full order lifecycle diagram](https://github.com/diegnghtmr/food-court-ui/blob/main/docs/order-flow-diagram.png) and the [other system diagrams](https://github.com/diegnghtmr/food-court-ui/tree/main/docs).
+### Ports and adapters
+
+See the [adapter map](docs/reference.md#ports-and-adapters) for the interfaces that separate the order rules from MongoDB, sibling APIs, and notifications.
 
 ## Tech stack
 
@@ -93,6 +86,10 @@ See the [full order lifecycle diagram](https://github.com/diegnghtmr/food-court-
 ```
 
 [CI](.github/workflows/ci.yml) builds and tests on Temurin 25. Use `./gradlew test` for the test task, which includes domain rules for order creation and the status lifecycle.
+
+## Documentation
+
+- [Order API reference](docs/reference.md) — checkout and kitchen endpoints, MongoDB and sibling service settings, ports and adapters, and system diagrams.
 
 ## Related repositories
 
