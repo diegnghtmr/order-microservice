@@ -85,3 +85,7 @@ _Order lifecycle from pending to delivered or canceled, including state transiti
 - [order-microservice](https://github.com/diegnghtmr/order-microservice)
 - [traceability-microservice](https://github.com/diegnghtmr/traceability-microservice)
 - [food-court-ui](https://github.com/diegnghtmr/food-court-ui)
+
+## License
+
+MIT, see [LICENSE](LICENSE).
